@@ -1,13 +1,14 @@
 
 
 ---
-title: "##Predicting Mode of Weight-Lifting Exercise Performance"
-author: "H-RM Tan"
+title: <!--"##Predicting Mode of Weight-Lifting Exercise Performance" -->
+author: <!-- "H-RM Tan"-->
 date: #"17 August 2016" <!-- *-- coded during 15--18 Aug 2016*  -->
-output: 
-  html_document: 
-    keep_md: yes
+output: html_document
 ---
+
+##Predicting Mode of Weight-Lifting Exercise Performance
+*H-RM Tan*  
 
 <!-- Setup & LIBRARIES (background) -->
 ```{r setup, include=FALSE}
