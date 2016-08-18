@@ -1,9 +1,9 @@
 
 
 ---
-title: <!--"##Predicting Mode of Weight-Lifting Exercise Performance" -->
-author: <!-- "H-RM Tan"-->
-date: <!-- *-- coded during 15--18 Aug 2016*  -->
+title: 
+author: 
+date: 
 output: html_document
 ---
 
@@ -13,9 +13,8 @@ output: html_document
 <!-- Setup & LIBRARIES (background) -->
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-setwd("~/Documents/Dropbox/DSrelated/Coursera_DataScienceTrack_JH/08_MachineLearning/Project")
-# load("~/Documents/Dropbox/DSrelated/Coursera_DataScienceTrack_JH/08_MachineLearning/Project/TrainNTestdata.RData")
-load("~/Documents/Dropbox/DSrelated/Coursera_DataScienceTrack_JH/08_MachineLearning/Project/proj_fit_RFnGBM.RData")
+setwd("~/#/Coursera_DataScienceTrack_JH/08_MachineLearning/Project")
+load("~/#/Coursera_DataScienceTrack_JH/08_MachineLearning/Project/proj_fit_RFnGBM.RData")
 
 library(parallel)
 library(doMC)
@@ -26,10 +25,7 @@ library(survival)
 library(dplyr)
 library(cluster)
 library(splines)
-# library(rpart)
-# library(rpart.plot)
-# library(corrplot)
-# library(RColorBrewer)
+
 ```
 <!-- sessionInfo() -->
 
