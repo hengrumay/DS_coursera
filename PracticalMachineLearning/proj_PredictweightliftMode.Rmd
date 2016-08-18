@@ -3,7 +3,7 @@
 ---
 title: <!--"##Predicting Mode of Weight-Lifting Exercise Performance" -->
 author: <!-- "H-RM Tan"-->
-date: #"17 August 2016" <!-- *-- coded during 15--18 Aug 2016*  -->
+date: <!-- *-- coded during 15--18 Aug 2016*  -->
 output: html_document
 ---
 
