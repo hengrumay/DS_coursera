@@ -194,7 +194,7 @@ The validated RF yielded a high accuracy of 0.993, and the out-of-sample error r
 Let's predict the test data with both models.
 
 ### • Predicting with Models :  
-While GBM has a slightly lower accuracy than RF model, they both yielded the same (Quizz-verified) predicted mode of weight lifting peformance in the test dataset. 
+While GBM has a slightly lower accuracy than RF model, they both yielded the same (Quiz-verified) predicted mode of weight lifting peformance in the test dataset. 
 
 ```{r, cache=TRUE}
 (predict_rf <- predict(fit_rf, test))
