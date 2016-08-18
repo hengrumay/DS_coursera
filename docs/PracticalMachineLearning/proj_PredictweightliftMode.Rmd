@@ -1,17 +1,10 @@
 
 
 ---
-<<<<<<< HEAD
 title: <!--"##Predicting Mode of Weight-Lifting Exercise Performance" -->
 author: <!-- "H-RM Tan"-->
 date: <!-- *-- coded during 15--18 Aug 2016*  -->
-output: ### html_document
-=======
-title: 
-author: 
-date: 
-output: html_document
->>>>>>> origin/master
+output: ###html_document
 ---
 
 ##Predicting Mode of Weight-Lifting Exercise Performance
@@ -20,8 +13,9 @@ output: html_document
 <!-- Setup & LIBRARIES (background) -->
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-setwd("~/#/Coursera_DataScienceTrack_JH/08_MachineLearning/Project")
-load("~/#/Coursera_DataScienceTrack_JH/08_MachineLearning/Project/proj_fit_RFnGBM.RData")
+setwd("~/Documents/Dropbox/DSrelated/Coursera_DataScienceTrack_JH/08_MachineLearning/Project")
+# load("~/Documents/Dropbox/DSrelated/Coursera_DataScienceTrack_JH/08_MachineLearning/Project/TrainNTestdata.RData")
+load("~/Documents/Dropbox/DSrelated/Coursera_DataScienceTrack_JH/08_MachineLearning/Project/proj_fit_RFnGBM.RData")
 
 library(parallel)
 library(doMC)
@@ -99,7 +93,7 @@ rownames(dimD) <- c('training','validating', 'trainData', 'testData' )
 <!-- https://www.quora.com/When-would-one-use-Random-Forests-over-Gradient-Boosted-Machines-GBMs -->
 
 ### • Fitting Tree Models :  
-Both Gradient Boosting and Random Forest Tree Models are frequently used in e.g. kaggle competitions, in part for their high predictive accuracy. For the current purpose, a simple set of parameters and their inherent algorithmic defaults are used for both models to predict the mode of weight-lifting performance. We use a control parameter with 10 fold cross validation, which would hopefully reduce estimation bias at the expense of some computational time (ref. http://stats.stackexchange.com/questions/27730/choice-of-k-in-k-fold-cross-validation). (*The models have been pre-run and loaded during the knitr Rmd setup. If you wish to run it on your machine -- please note it cuold take a while to complete.*)  
+Both Gradient Boosting and Random Forest Tree Models are frequently used in e.g. kaggle competitions, in part for their high predictive accuracy. For the current purpose, a simple set of parameters and their inherent algorithmic defaults are used for both models to predict the mode of weight-lifting performance. We use a control parameter with 10 fold cross validation, which would hopefully reduce estimation bias at the expense of some computational time (ref. http://stats.stackexchange.com/questions/27730/choice-of-k-in-k-fold-cross-validation). (*The models have been pre-run and loaded during the knitr Rmd setup. If you wish to run it on your machine -- please note it could take a while to complete.*)  
 
 We assess the variable(s) of importance, accuracy,'out-of-bag' errors, and prediction outcomes for both models. 
 
