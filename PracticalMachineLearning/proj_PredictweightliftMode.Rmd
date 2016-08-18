@@ -1,0 +1,213 @@
+
+
+---
+title: "##Predicting Mode of Weight-Lifting Exercise Performance"
+author: "H-RM Tan"
+date: #"17 August 2016" <!-- *-- coded during 15--18 Aug 2016*  -->
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+<!-- Setup & LIBRARIES (background) -->
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/Documents/Dropbox/DSrelated/Coursera_DataScienceTrack_JH/08_MachineLearning/Project")
+# load("~/Documents/Dropbox/DSrelated/Coursera_DataScienceTrack_JH/08_MachineLearning/Project/TrainNTestdata.RData")
+load("~/Documents/Dropbox/DSrelated/Coursera_DataScienceTrack_JH/08_MachineLearning/Project/proj_fit_RFnGBM.RData")
+
+library(parallel)
+library(doMC)
+library(caret)
+library(randomForest)
+library(gbm)
+library(survival)
+library(dplyr)
+library(cluster)
+library(splines)
+# library(rpart)
+# library(rpart.plot)
+# library(corrplot)
+# library(RColorBrewer)
+```
+<!-- sessionInfo() -->
+
+<!-- Synopsis 
+Immediately after the title, there should be a synopsis which describes and summarizes your analysis in at most **10 complete sentences**. -->
+### • Synopsis :  
+Wearable devices that monitor physical activity are on the rise and provide a wealth of useful information. Apart from measuring quantity of activity, assessing the manner in which an activity is performed could also improve remote human activity monitoring. The Weight Lifting Exercise Dataset (<a href="http://groupware.les.inf.puc-rio.br/public/papers/2013.Velloso.QAR-WLE.pdf">Velloso, Bulling, Gellersen, Ugulino, Fuks, 2013</a>) provides a means to derive a "proof-of-concept" in decoding the mode of weight lifting performance. Data was acquired from accelerometer sensors on the belt, forearm, arm, and dumbell worn by 6 participants as they performed barbell lifts either correctly and incorrectly in 5 different ways. Further information is available from http://groupware.les.inf.puc-rio.br/har#weight_lifting_exercises.
+
+### • Load & Clean Data :  
+The required libraries (parallel; doMC; caret; randomForest; glm; survival; dplyr; cluster; splines) are included in the knitr Rmd setup. 
+
+<!-- LIBRARIES (background) -->
+```{r, eval=FALSE, echo=FALSE}
+library(parallel)
+library(doMC)
+library(caret)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(corrplot)
+library(RColorBrewer)
+```
+
+We load the data from the URLs provided.   
+```{r, eval=FALSE, cache=TRUE}
+trainUrl <-"https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+trainO <- read.csv(trainUrl, na.string = c(""," ","NA") )
+testO <- read.csv(testUrl, na.string = c(""," ","NA") )
+```
+
+Missing values and variables (~62%) are excluded using a custom function that finds variable columns with no missing values. 
+```{r, eval=FALSE, cache=TRUE}
+keepCols <- function(df) { colnames(df)[unlist(lapply(df, function(x) anyNA(x)==0) ) ] }
+train1 <- trainO[keepCols(trainO)]
+test1 <- testO[keepCols(testO)]
+```
+
+Variables e.g. data entry row 'X'; user_names; timestamps, which are unlikely informative for the current modelling and prediction are also excluded.  
+```{r, eval=FALSE, cache=TRUE}
+train <- train1[!grepl("^X|user|timestamp|window", names(train1))]
+test <- test1[!grepl("^X|user|timestamp|window", names(test1))]
+```
+```{r, eval=FALSE, echo=FALSE}
+## Clear Vars
+remove(list=c('trainO','train1', 'trainUrl', 'testO','test1','testUrl', 'keepCols' )) 
+```
+
+Setting the randomisation with a specific seed helps with reproducibility. We subsequently split train data for training (80%) and validating (20%) the model(s). 
+```{r, eval=FALSE, cache=TRUE}
+set.seed(2612)
+inTrain <- createDataPartition(train$classe, p = 0.8, list = FALSE)
+training <- train[inTrain, ]
+validating <- train[-inTrain, ]
+```
+The dimensions of these data splits and the original train and test sets are as follows: 
+```{r, echo=FALSE, cache=TRUE}
+dimD <- rbind(dim(training), dim(validating), dim(train), dim(test))
+colnames(dimD) <- c('Nrows','Nvars')
+rownames(dimD) <- c('training','validating', 'trainData', 'testData' )
+(dimD)
+```
+
+<!-- https://www.quora.com/When-would-one-use-Random-Forests-over-Gradient-Boosted-Machines-GBMs -->
+
+### • Fitting Tree Models :  
+Both Gradient Boosting and Random Forest Tree Models are frequently used in e.g. kaggle competitions, in part for their high predictive accuracy. For the current purpose, a simple set of parameters and their inherent algorithmic defaults are used for both models to predict the mode of weight-lifting performance. We use a control parameter with 10 fold cross validation, which would hopefully reduce estimation bias at the expense of some computational time (ref. http://stats.stackexchange.com/questions/27730/choice-of-k-in-k-fold-cross-validation). (*The models have been pre-run and loaded during the knitr Rmd setup. If you wish to run it on your machine -- please note it cuold take a while to complete.*)  
+
+We assess the variable(s) of importance, accuracy,'out-of-bag' errors, and prediction outcomes for both models. 
+
+<!-- #### --------------------------------------------------------------------------------------------      -->
+***
+
+<!-- https://www.quora.com/What-is-an-intuitive-explanation-of-Gradient-Boosting -->
+#### • Fitting a Stochastic Gradient Boost Model (GBM) :  
+A Gradient boosting algorithm generally attempts to iteratively "boost" (by increasing its weighing factor) many weak (but better than random) predictive models into a strong one, in the form of a cluster of weak models, while minimising the training error. Additionally, for any given training data, the GBM algorithm attempts to find an optimal linear combination of trees (assuming that the final model is the combination of the weighted sum of predictions of individual trees), through parameter tuning.
+
+```{r, eval=FALSE, cache=TRUE}
+set.seed(2612)
+registerDoMC(3)
+control <- trainControl(method = "cv", number = 10) 
+fit_gbm <- train(classe ~ ., data = training, method = "gbm",
+                trControl = control)
+```
+
+#### • Assessing GBM :  
+```{r, cache=TRUE,fig.align='center', fig.height=4, fig.width=4}
+fit_gbm$finalModel
+varImp(fit_gbm)
+dotPlot(varImp(fit_gbm))
+``` 
+<!-- summary(fit_gbm) -->
+<!-- plot(fit_gbm) -->
+It appears that the top 3 variables ('roll_belt'; 'pitch_forearm'; 'yaw_belt') and expecially that of 'roll_belt' have the strongest influence on the model. We validate the GBM to see how it performs.  
+
+#### • Validating GBM :  
+```{r, eval=FALSE, cache=TRUE}
+validate_gbm <- predict(fit_gbm, validating)
+``` 
+```{r, cache=TRUE}
+(confMat_val_gbm <- confusionMatrix(validating$classe, validate_gbm))
+``` 
+```{r, cache=TRUE}
+# (accuracy_val_gbm <- postResample(validate_gbm, validating$classe) )
+(OutOfSampleErrorRate_gbm <- (1 - as.numeric(confMat_val_gbm$overall[1]) )*100 )
+```  
+<!--  Accuracy     Kappa  -->
+<!-- 0.9625287 0.9525901  -->
+<!-- OOBerr [1] 3.747132   -->
+The validated GBM yielded a rather high accuracy of 0.963, and the out-of-sample error rate is about 3.75%.  
+
+<!-- #### --------------------------------------------------------------------------------------------      -->
+***
+We also assess the random forest model before making prediction(s) on the test data.     
+
+#### • Fitting a Random Forest Model :  
+Random Forests are trained with random sampling of data as well as the option to randomize feature selection in its training. They are constructed from a mass of decision trees at training time. The outcome represents the highest frequency of the classes (classification) or mean prediction (regression) of the individual trees. The premise for this approach is that randomization will better generalize (minimizes overfitting by decision trees) performance outside of the training dataset. 
+
+```{r, eval=FALSE, cache=TRUE}
+set.seed(2612)
+registerDoMC(cores = 3)
+control <- trainControl(method = "cv", number = 10) 
+fit_rf <- train(classe ~ ., data = training, 
+                method = "rf", trControl = control, importance=TRUE)
+``` 
+
+#### • Assessing the RF :  
+```{r, cache=TRUE}
+fit_rf
+```  
+The training accuracy is around 0.99 with 27 variables. It is often useful to also check the variable of importance (as with GBM before) as well as how accuracy may depend on the number of randomly selected predictor variables.  
+
+```{r, cache=TRUE, fig.align='center', fig.width=10, fig.height=4}
+par(mfrow=c(1,3))
+varImpPlot(fit_rf$finalModel, type = 1, pch=16, col='navy')
+varImpPlot(fit_rf$finalModel, type = 2, pch=16, col='dark green')
+
+plot(fit_rf$results[,c(1,2)] , xlab = "Predictors", ylab = "Accuracy" , col="red")
+lines(fit_rf$results[,c(1,2)], col="red")
+``` 
+<!-- https://dinsdalelab.sdsu.edu/metag.stats/code/randomforest.html -->
+As with the GBM, it appears that the top 3 variables ('roll_belt'; 'yaw_belt'; 'pitch_forearm') have the strongest influence on the model. This can be appreciated both by the amount they decrease the mean accuracy when they are excluded from the model, and also by the corresponding (high) mean decrease in their Gini Coefficient which reflect the purity of their measures (ref. https://dinsdalelab.sdsu.edu/metag.stats/code/randomforest.html). It is worth noting that including more variables didn't necessarily improve the training accuracy.
+
+```{r, cache=TRUE}
+fit_rf$finalModel
+``` 
+The final trained model with 27 parameters has an error rate of about 0.57%. 
+Let's validate the RF to see how it performs.  
+
+#### • Validating RF :  
+```{r, cache=TRUE}
+validate_rf <- predict(fit_rf, validating)
+(confMat_val_rf <- confusionMatrix(validating$classe, validate_rf))
+```
+```{r, cache=TRUE}
+# (accuracy_val_rf <- postResample(validate_rf, validating$classe)) 
+(OutOfSampleErrorRate_rf <- (1 - as.numeric(confMat_val_rf$overall[1]) )*100 )
+```
+<!--  Accuracy     Kappa  -->
+<!-- 0.9931175 0.9912939  -->
+<!-- [1] 0.6882488 -->
+The validated RF yielded a high accuracy of 0.993, and the out-of-sample error rate is about 0.69%.
+
+*** 
+Let's predict the test data with both models.
+
+### • Predicting with Models :  
+While GBM has a slightly lower accuracy than RF model, they both yielded the same (Quizz-verified) predicted mode of weight lifting peformance in the test dataset. 
+
+```{r, cache=TRUE}
+(predict_rf <- predict(fit_rf, test))
+(predict_gbm <- predict(fit_gbm, test))
+``` 
+
+
+### • Summary :  
+At least for this current dataset, both GBM and RF models do comparatively well in their prediction accuracy. It is interesting to observe the higher out-of-sample error rate in the GBM relative to the RF model. 
+
+#### • Further exploration :  
+<!-- It is likely that not all parameters would be needed as some appear to be strongly (anti-)correlated with others.  -->
+Parameter-tuning may simplify the model(s). It would be nice to figure a way to plot the final tree model(s).
+
